@@ -19,12 +19,15 @@
 
 package com.github.poi;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
+import org.apache.poi.util.TempFile;
 
 public class XlsxUtils {
     public static InputStream decrypt(final InputStream inputStream, final String pwd) throws Exception {
@@ -40,4 +43,21 @@ public class XlsxUtils {
             IOUtils.closeQuietly(inputStream);
         }
     }
+    
+    public static void checkTempFiles() throws IOException {
+        String tmpDir = System.getProperty(TempFile.JAVA_IO_TMPDIR) + "/poifiles";
+        File tempDir = new File(tmpDir);
+        if(tempDir.exists()) {
+            String[] tempFiles = tempDir.list();
+            if(tempFiles.length > 0) {
+                System.out.println("found files in poi temp dir " + tempDir.getAbsolutePath());
+                for(String filename : tempDir.list()) {
+                    System.out.println("file: " + filename);
+                }
+            }
+        } else {
+            System.out.println("unable to find poi temp dir");
+        }
+    }
+    
 }

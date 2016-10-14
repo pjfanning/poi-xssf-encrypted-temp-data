@@ -32,6 +32,7 @@ public class LoadPasswordProtectedXlsx {
             if(args.length != 2) {
                 throw new Exception("Expected 2 params: filename and password");
             }
+            XlsxUtils.checkTempFiles();
             String filename = args[0];
             String password = args[1];
             try(FileInputStream fis = new FileInputStream(filename);
@@ -41,6 +42,7 @@ public class LoadPasswordProtectedXlsx {
                     XSSFWorkbook workbook = new XSSFWorkbook(pkg)) {
                 System.out.println("sheet count: " + workbook.getNumberOfSheets());
             }
+            XlsxUtils.checkTempFiles();
         } catch(Throwable t) {
             t.printStackTrace();
         }
