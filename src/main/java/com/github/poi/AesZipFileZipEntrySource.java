@@ -1,3 +1,22 @@
+/*
+ *  ====================================================================
+ *    Licensed to the Apache Software Foundation (ASF) under one or more
+ *    contributor license agreements.  See the NOTICE file distributed with
+ *    this work for additional information regarding copyright ownership.
+ *    The ASF licenses this file to You under the Apache License, Version 2.0
+ *    (the "License"); you may not use this file except in compliance with
+ *    the License.  You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ * ====================================================================
+ */
+
 package com.github.poi;
 
 import java.io.Closeable;
@@ -32,14 +51,14 @@ public class AesZipFileZipEntrySource implements ZipEntrySource, Closeable {
     final ZipFile zipFile;
     final Cipher ci;
     boolean closed;
-
+    
     public AesZipFileZipEntrySource(File tmpFile, Cipher ci) throws IOException {
         this.tmpFile = tmpFile;
         this.zipFile = new ZipFile(tmpFile);
         this.ci = ci;
         this.closed = false;
     }
-
+    
     /**
      * Note: the file sizes are rounded up to the next cipher block size,
      * so don't rely on file sizes of these custom encrypted zip file entries!
@@ -48,13 +67,13 @@ public class AesZipFileZipEntrySource implements ZipEntrySource, Closeable {
     public Enumeration<? extends ZipEntry> getEntries() {
         return zipFile.entries();
     }
-
+    
     @Override
     public InputStream getInputStream(ZipEntry entry) throws IOException {
         InputStream is = zipFile.getInputStream(entry);
         return new CipherInputStream(is, ci);
     }
-
+    
     @Override
     public void close() throws IOException {
         if(!closed) {
@@ -63,12 +82,12 @@ public class AesZipFileZipEntrySource implements ZipEntrySource, Closeable {
         }
         closed = true;
     }
-    
+
     @Override
     public boolean isClosed() {
         return closed;
     }
-    
+
     public static AesZipFileZipEntrySource createZipEntrySource(InputStream is) throws IOException, GeneralSecurityException {
         // generate session key
         SecureRandom sr = new SecureRandom();
@@ -80,15 +99,15 @@ public class AesZipFileZipEntrySource implements ZipEntrySource, Closeable {
         IOUtils.closeQuietly(is);
         return fileToSource(tmpFile, CipherAlgorithm.aes128, keyBytes, ivBytes);
     }
-    
+
     private static void copyToFile(InputStream is, File tmpFile, CipherAlgorithm cipherAlgorithm, byte keyBytes[], byte ivBytes[]) throws IOException, GeneralSecurityException {
         SecretKeySpec skeySpec = new SecretKeySpec(keyBytes, cipherAlgorithm.jceId);
         Cipher ciEnc = CryptoFunctions.getCipher(skeySpec, cipherAlgorithm, ChainingMode.cbc, ivBytes, Cipher.ENCRYPT_MODE, "PKCS5Padding");
-
+        
         ZipInputStream zis = new ZipInputStream(is);
         FileOutputStream fos = new FileOutputStream(tmpFile);
         ZipOutputStream zos = new ZipOutputStream(fos);
-
+        
         ZipEntry ze;
         while ((ze = zis.getNextEntry()) != null) {
             // the cipher output stream pads the data, therefore we can't reuse the ZipEntry with set sizes
@@ -115,11 +134,11 @@ public class AesZipFileZipEntrySource implements ZipEntrySource, Closeable {
         fos.close();
         zis.close();
     }
-    
+
     private static AesZipFileZipEntrySource fileToSource(File tmpFile, CipherAlgorithm cipherAlgorithm, byte keyBytes[], byte ivBytes[]) throws ZipException, IOException {
         SecretKeySpec skeySpec = new SecretKeySpec(keyBytes, cipherAlgorithm.jceId);
         Cipher ciDec = CryptoFunctions.getCipher(skeySpec, cipherAlgorithm, ChainingMode.cbc, ivBytes, Cipher.DECRYPT_MODE, "PKCS5Padding");
         return new AesZipFileZipEntrySource(tmpFile, ciDec);
     }
-
+    
 }
